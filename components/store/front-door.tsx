@@ -50,15 +50,17 @@ export function FrontDoor({
 }) {
   const router = useRouter();
   const [opening, setOpening] = useState(false);
+  const [waiting, setWaiting] = useState(false);
   const returning = useSyncExternalStore(noSubscribe, readSeen, () => false);
 
   // Remember the arrival once it has played (or the door is opened), not on
   // load: marking it straight away would cut the first arrival short.
+  // The shop itself is fetched in the background by the prefetching links
+  // below, so it is ready by the time the doors have opened.
   useEffect(() => {
-    router.prefetch("/shop");
     const timer = window.setTimeout(markSeen, 3200);
     return () => window.clearTimeout(timer);
-  }, [router]);
+  }, []);
 
   function enter(event: React.MouseEvent) {
     // Let people open the shop in a new tab as usual.
@@ -72,9 +74,12 @@ export function FrontDoor({
     }
     setOpening(true);
     window.setTimeout(() => router.push("/shop"), OPEN_MS);
+    // On a slow connection the shop may not be there yet: show a quiet loader.
+    window.setTimeout(() => setWaiting(true), OPEN_MS + 250);
   }
 
   return (
+    <>
     <section
       className={`front-door navy-ground relative isolate flex h-svh min-h-[520px] flex-col overflow-hidden text-[#fbf8f1] ${opening ? "is-opening" : ""} ${returning ? "is-returning" : ""}`}
       aria-label="Crown"
@@ -88,7 +93,7 @@ export function FrontDoor({
       ))}
 
       <div className="relative flex flex-1 flex-col items-center justify-center px-8 text-center">
-        <Link href="/shop" onClick={enter} aria-label="Open the shop" className="door-stage door-in relative block" data-track="Crown door" data-track-id="door-crown">
+        <Link href="/shop" prefetch onClick={enter} aria-label="Open the shop" className="door-stage door-in relative block" data-track="Crown door" data-track-id="door-crown">
           <span className="door-crown crown-gleam relative block">
             <Image src={CROWN.src} alt="" width={CROWN.width} height={CROWN.height} priority className="door-half door-left" />
             <Image src={CROWN.src} alt="" width={CROWN.width} height={CROWN.height} priority className="door-half door-right absolute inset-0" />
@@ -108,7 +113,7 @@ export function FrontDoor({
             {line}
           </p>
           <div className="door-in mt-[4.2svh]" style={step(8)}>
-            <Link href="/shop" onClick={enter} className="btn-brass min-h-[3.2rem] px-9 text-[0.74rem]" data-track="Shop now" data-track-id="door-shop-now">
+            <Link href="/shop" prefetch onClick={enter} className="btn-brass min-h-[3.2rem] px-9 text-[0.74rem]" data-track="Shop now" data-track-id="door-shop-now">
               Shop now <ArrowRight size={15} aria-hidden />
             </Link>
           </div>
@@ -130,5 +135,11 @@ export function FrontDoor({
         </Link>
       </nav>
     </section>
+    {waiting ? (
+      <div className="door-wait fixed inset-0 grid place-items-center" role="status" aria-label="Opening the shop">
+        <div className="house-loader" />
+      </div>
+    ) : null}
+    </>
   );
 }

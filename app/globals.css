@@ -742,6 +742,10 @@ body {
     transition: opacity 0.6s cubic-bezier(0.4, 0, 1, 1) 1.05s, filter 0.6s ease 1.05s;
   }
 
+  .door-wait {
+    animation: fade-in 0.6s ease both;
+  }
+
   @keyframes door-out {
     to { opacity: 0; transform: translateY(10px); }
   }
