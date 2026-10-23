@@ -20,9 +20,6 @@ export function ProductCard({ product, currency, priority = false }: { product: 
         <div className="absolute inset-0 transition-transform duration-700 ease-out group-hover:scale-[1.03]">
           <ProductVisual product={product} priority={priority} sizes="(min-width: 1280px) 22vw, (min-width: 768px) 30vw, 50vw" />
         </div>
-        {product.bestseller ? (
-          <span className="label absolute left-3 top-3 bg-gold-bright px-2 py-1 text-[8.5px] text-navy shadow-sm">Popular</span>
-        ) : null}
       </div>
       <div className="mt-4">
         <h3 className="font-serif text-[17px] leading-snug text-navy decoration-gold decoration-1 underline-offset-4 group-hover:underline">{product.title}</h3>

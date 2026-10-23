@@ -42,9 +42,8 @@ export function telUrl(phone: string) {
 function SectionHeading({ eyebrow, title, subtitle, align = "left", as: Tag = "h2" }: { eyebrow?: string; title: string; subtitle?: string; align?: "left" | "center"; as?: "h1" | "h2" }) {
   return (
     <div className={align === "center" ? "mx-auto max-w-2xl text-center" : "max-w-2xl"}>
-      <span className={`crown-rule mb-4 ${align === "center" ? "mx-auto" : ""}`} aria-hidden />
       {eyebrow ? <p className="eyebrow mb-3">{eyebrow}</p> : null}
-      <Tag className="gold-text font-serif text-[2.1rem] font-bold leading-[1.1] md:text-5xl">{title}</Tag>
+      <Tag className="gather gold-text font-serif text-[2.1rem] font-bold leading-[1.1] md:text-5xl">{title}</Tag>
       {subtitle ? <p className="mt-4 font-serif text-[17px] italic leading-7 text-muted">{subtitle}</p> : null}
     </div>
   );
@@ -58,16 +57,38 @@ export function PageSections({ snapshot, slug }: { snapshot: StoreSnapshot; slug
   // The first heading on a page is its h1 (the hero has its own).
   const firstTitled = sections.find((section) => section.type !== "hero")?.id;
   const hasHero = sections.some((section) => section.type === "hero");
+  const highlights = sections.find((section) => section.type === "highlights");
+  const hasVisit = sections.some((section) => section.type === "visit");
+  // On the home page the "about" story and the shop address read as one block.
+  const story = slug === "home" && hasVisit ? sections.find((section) => section.type === "image_text") : undefined;
+  const context: PageContext = {
+    hasHero,
+    heroPoints: highlights && highlights.type === "highlights" ? highlights.items.slice(0, 3).map((item) => item.title) : ["25 years in Colombo 11", "Retail and wholesale", "Price confirmed before you pay"],
+    story: story && story.type === "image_text" ? story : undefined,
+  };
   return (
     <>
-      {sections.map((section) => (
-        <SectionBlock key={section.id} section={section} snapshot={snapshot} primary={!hasHero && section.id === firstTitled} />
-      ))}
+      {sections
+        .filter((section) => section.id !== story?.id)
+        .map((section) => (
+          <SectionBlock key={section.id} section={section} snapshot={snapshot} primary={!hasHero && section.id === firstTitled} context={context} />
+        ))}
     </>
   );
 }
 
-function SectionBlock({ section, snapshot, primary }: { section: Section; snapshot: StoreSnapshot; primary: boolean }) {
+type StorySection = Extract<Section, { type: "image_text" }>;
+type PageContext = { hasHero: boolean; heroPoints: string[]; story?: StorySection };
+
+// Shortcuts for the reasons people come to Crown, not just the product types.
+const needs = [
+  { label: "Hotel & guest house linen", href: "/shop?q=white" },
+  { label: "Waterproof protection", href: "/shop?q=waterproof" },
+  { label: "Everyday towels", href: "/collections/towels" },
+  { label: "Buying in bulk", href: "/wholesale" },
+];
+
+function SectionBlock({ section, snapshot, primary, context }: { section: Section; snapshot: StoreSnapshot; primary: boolean; context: PageContext }) {
   const { settings } = snapshot;
   const currency = settings.currency;
   const chat = whatsappUrl(settings.whatsappNumber, settings.whatsappGreeting);
@@ -75,9 +96,11 @@ function SectionBlock({ section, snapshot, primary }: { section: Section; snapsh
 
   switch (section.type) {
     case "hero":
-      return <Hero banners={heroBanners(snapshot)} whatsappHref={chat} phone={settings.phoneDisplay} />;
+      return <Hero banner={heroBanners(snapshot)[0]} points={context.heroPoints} whatsappHref={chat} phone={settings.phoneDisplay} />;
 
     case "highlights":
+      // Under a hero these points are already shown in it.
+      if (context.hasHero) return null;
       return (
         <section aria-label={section.title} className="border-b border-line bg-white/70">
           <div className="stagger-load mx-auto grid max-w-7xl grid-cols-2 gap-x-6 gap-y-8 px-5 py-10 md:px-8 lg:grid-cols-4 lg:py-12">
@@ -125,7 +148,6 @@ function SectionBlock({ section, snapshot, primary }: { section: Section; snapsh
                   )}
                   <span className="pointer-events-none absolute inset-[8px] border border-gold/40 transition-colors group-hover:border-gold/80" aria-hidden />
                   <span className="relative mt-auto p-5 md:p-6">
-                    <span className="crown-rule mb-3" aria-hidden />
                     <span className="block font-serif text-2xl font-bold leading-tight md:text-[1.7rem]">{category.name}</span>
                     <span className="label mt-2 flex items-center gap-2 text-[9px] text-gold-strap">
                       {count} {count === 1 ? "item" : "items"}
@@ -135,6 +157,14 @@ function SectionBlock({ section, snapshot, primary }: { section: Section; snapsh
                 </Link>
               );
             })}
+          </div>
+          <div className="mt-8 flex flex-wrap items-center gap-2">
+            <span className="mr-2 text-sm text-muted">Shop by need:</span>
+            {needs.map((need) => (
+              <Link key={need.href} href={need.href} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-4 py-2 text-[13px] text-navy transition-colors hover:border-gold hover:text-brass" data-track={need.label} data-track-id="shop-by-need">
+                {need.label} <ArrowRight size={13} aria-hidden />
+              </Link>
+            ))}
           </div>
         </Reveal>
       );
@@ -199,9 +229,9 @@ function SectionBlock({ section, snapshot, primary }: { section: Section; snapsh
               <span className="crown-rule mb-4" aria-hidden />
               <p className="eyebrow">{section.eyebrow}</p>
               {onWholesalePage || primary ? (
-                <h1 className="gold-text mt-3 font-serif text-[2.3rem] font-bold leading-[1.08] md:text-[3.4rem]">{section.title}</h1>
+                <h1 className="gather gold-text mt-3 font-serif text-[2.3rem] font-bold leading-[1.08] md:text-[3.4rem]">{section.title}</h1>
               ) : (
-                <h2 className="gold-text mt-3 font-serif text-[2.1rem] font-bold leading-[1.1] md:text-5xl">{section.title}</h2>
+                <h2 className="gather gold-text mt-3 font-serif text-[2.1rem] font-bold leading-[1.1] md:text-5xl">{section.title}</h2>
               )}
               <p className="mt-5 max-w-xl font-serif text-lg italic leading-8 text-mist">{section.body}</p>
               <dl className="stagger mt-10 grid gap-x-8 gap-y-6 sm:grid-cols-2">
@@ -259,6 +289,7 @@ function SectionBlock({ section, snapshot, primary }: { section: Section; snapsh
     case "size_guide": {
       const groups = sizeGuide(snapshot);
       if (groups.length === 0) return null;
+      if (section.pageSlug === "home") return <SizeFinder groups={groups} title={section.title} subtitle={section.subtitle} whatsapp={settings.whatsappNumber} />;
       return (
         <Reveal as="section" id="sizes" className="mx-auto max-w-7xl scroll-mt-28 px-5 py-20 md:px-8 lg:py-24">
           <SectionHeading title={section.title} subtitle={section.subtitle} as={heading} />
@@ -314,7 +345,7 @@ function SectionBlock({ section, snapshot, primary }: { section: Section; snapsh
     }
 
     case "visit":
-      return <VisitBlock settings={settings} title={section.title} subtitle={section.subtitle} heading={heading} />;
+      return <VisitBlock settings={settings} title={section.title} subtitle={section.subtitle} heading={heading} story={context.story} />;
 
     case "image_text": {
       const copy = (
@@ -359,9 +390,9 @@ function SectionBlock({ section, snapshot, primary }: { section: Section; snapsh
           <div className="mx-auto max-w-7xl px-5 py-20 md:px-8">
             <span className="crown-rule mb-4" aria-hidden />
             {primary ? (
-              <h1 className="gold-text font-serif text-[2.1rem] font-bold md:text-5xl">{section.title}</h1>
+              <h1 className="gather gold-text font-serif text-[2.1rem] font-bold md:text-5xl">{section.title}</h1>
             ) : (
-              <h2 className="gold-text font-serif text-[2.1rem] font-bold md:text-5xl">{section.title}</h2>
+              <h2 className="gather gold-text font-serif text-[2.1rem] font-bold md:text-5xl">{section.title}</h2>
             )}
             <div className="stagger mt-10 grid gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
               {section.items.map((item) => (
@@ -403,7 +434,7 @@ function SectionBlock({ section, snapshot, primary }: { section: Section; snapsh
           <span className="absolute inset-0 bg-gradient-to-r from-navy-deep via-navy-deep/70 to-transparent" aria-hidden />
           <div className="relative z-10 flex min-h-[420px] flex-col justify-end p-8 text-white md:p-14">
             <p className="eyebrow text-gold-strap">{section.eyebrow}</p>
-            <h2 className="gold-text-light mt-3 max-w-lg font-serif text-4xl font-bold md:text-5xl">{section.title}</h2>
+            <h2 className="gather gold-text-light mt-3 max-w-lg font-serif text-4xl font-bold md:text-5xl">{section.title}</h2>
             {section.body ? <p className="mt-3 max-w-md font-serif text-lg italic text-white/85">{section.body}</p> : null}
             <Link href={section.buttonHref} className="btn-brass mt-7 w-fit" data-track={section.buttonLabel} data-track-id={`promo-${section.id}`}>
               {section.buttonLabel}
@@ -433,7 +464,7 @@ function SectionBlock({ section, snapshot, primary }: { section: Section; snapsh
           <div className="mx-auto grid max-w-7xl items-center gap-8 px-5 py-16 md:px-8 lg:grid-cols-[1fr_1fr] lg:py-20">
             <div>
               <span className="crown-rule mb-4" aria-hidden />
-              <h2 className="gold-text font-serif text-3xl font-bold md:text-4xl">{section.title}</h2>
+              <h2 className="gather gold-text font-serif text-3xl font-bold md:text-4xl">{section.title}</h2>
               <p className="mt-3 max-w-md font-serif text-[17px] italic leading-7 text-muted">{section.subtitle}</p>
             </div>
             <SubscribeForm source="home" buttonLabel={section.buttonLabel} inline />
@@ -510,9 +541,9 @@ function SectionBlock({ section, snapshot, primary }: { section: Section; snapsh
           <div className="max-w-3xl">
             <span className="crown-rule mb-4" aria-hidden />
             {heading === "h1" ? (
-              <h1 className="gold-text font-serif text-[2.4rem] font-bold leading-tight md:text-6xl">{section.title}</h1>
+              <h1 className="gather gold-text font-serif text-[2.4rem] font-bold leading-tight md:text-6xl">{section.title}</h1>
             ) : (
-              <h2 className="gold-text font-serif text-[2.1rem] font-bold leading-tight md:text-5xl">{section.title}</h2>
+              <h2 className="gather gold-text font-serif text-[2.1rem] font-bold leading-tight md:text-5xl">{section.title}</h2>
             )}
             <div className="prose-house mt-8 text-[16px] leading-8 text-ink/85">
               {paragraphs(section.body).map((paragraph) => {
@@ -605,7 +636,83 @@ function ContactFacts({ settings }: { settings: Settings }) {
   );
 }
 
-function VisitBlock({ settings, title, subtitle, heading }: { settings: Settings; title: string; subtitle: string; heading: "h1" | "h2" }) {
+function SizeFinder({ groups, title, subtitle, whatsapp }: { groups: ReturnType<typeof sizeGuide>; title: string; subtitle: string; whatsapp: string }) {
+  return (
+    <Reveal as="section" className="mx-auto max-w-7xl px-5 py-16 md:px-8 lg:py-20">
+      <div className="grid items-center gap-10 border border-line bg-white p-7 md:p-10 lg:grid-cols-[0.9fr_1.1fr]">
+        <div>
+          <SectionHeading title={title} subtitle={subtitle} />
+          <div className="mt-7 flex flex-wrap gap-3">
+            <Link href="/pages/size-guide" className="btn-ink" data-track="Size guide" data-track-id="home-size-guide">
+              Full size guide <ArrowRight size={14} aria-hidden />
+            </Link>
+            <a href={whatsappUrl(whatsapp, "Hello Crown, which size fits a mattress of ")} target="_blank" rel="noreferrer" className="btn-line" data-track-type="whatsapp_click" data-track="Size WhatsApp" data-track-id="home-size-whatsapp">
+              <MessageCircle size={15} aria-hidden /> Ask us
+            </a>
+          </div>
+        </div>
+        <ul className="stagger grid gap-3 sm:grid-cols-2">
+          {groups.map((group) => {
+            const sizes = group.rows.filter((row) => /\d/.test(row.size)).map((row) => row.size);
+            return (
+              <li key={group.categoryId} className="flex items-start gap-4 rounded-sm bg-paper p-4">
+                <PlateArt kind={categoryKind(group.name)} tone="ivory" className="mt-1 h-7 w-auto shrink-0" />
+                <div className="min-w-0">
+                  <p className="font-serif text-[17px] font-bold text-navy">{group.name}</p>
+                  <p className="tabular mt-1 text-[13px] leading-6 text-muted">{sizes.length ? `${sizes[0]} to ${sizes[sizes.length - 1]} in` : "Ask for sizes"}</p>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </Reveal>
+  );
+}
+
+function VisitBlock({ settings, title, subtitle, heading, story }: { settings: Settings; title: string; subtitle: string; heading: "h1" | "h2"; story?: StorySection }) {
+  if (story) {
+    const [lead] = paragraphs(story.body);
+    return (
+      <Reveal as="section" className="mx-auto grid max-w-7xl items-center gap-12 px-5 py-20 md:px-8 lg:grid-cols-[1fr_1fr] lg:gap-16 lg:py-24">
+        <div>
+          <SectionHeading eyebrow={story.eyebrow} title={story.title} as={heading} />
+          {lead ? <p className="mt-6 max-w-lg text-[15px] leading-8 text-ink/80">{lead}</p> : null}
+          <ContactFacts settings={settings} />
+          <div className="mt-9 flex flex-wrap gap-3">
+            <a href={mapsUrl(settings)} target="_blank" rel="noreferrer" className="btn-ink" data-track="Directions" data-track-id="visit-directions">
+              <MapPin size={15} aria-hidden /> Get directions
+            </a>
+            <Link href={story.buttonHref || "/about"} className="btn-line" data-track={story.buttonLabel || "About Crown"} data-track-id="visit-about">
+              {story.buttonLabel || "About Crown"} <ArrowRight size={14} aria-hidden />
+            </Link>
+          </div>
+        </div>
+        <div className="relative">
+          <div className="relative aspect-[4/3] w-full lg:aspect-[5/4]">
+            <div className="absolute inset-0 border-2 border-navy" aria-hidden />
+            <div className="unveil absolute inset-[9px] overflow-hidden bg-sand">
+              {story.imageUrl ? (
+                <div className="parallax absolute inset-0">
+                  <Image src={story.imageUrl} alt={story.imageAlt || ""} fill className="object-cover" sizes="(min-width: 1024px) 45vw, 100vw" />
+                </div>
+              ) : null}
+            </div>
+            <div className="pointer-events-none absolute inset-[9px] border border-gold/70" aria-hidden />
+          </div>
+          <div className="navy-ground relative -mt-14 ml-6 mr-6 flex items-center gap-4 px-6 py-5 shadow-[0_20px_40px_-20px_rgba(15,26,61,0.6)] sm:ml-auto sm:mr-[-12px] sm:w-[22rem]">
+            <Image src="/images/brand/crown-mark.png" alt="" width={560} height={397} className="w-12 shrink-0" />
+            <div>
+              <p className="font-serif text-lg font-bold text-[#fbf8f1]">
+                {settings.address}, {settings.city}
+              </p>
+              <p className="text-[12.5px] text-mist">{subtitle || title}</p>
+            </div>
+          </div>
+        </div>
+      </Reveal>
+    );
+  }
   return (
     <Reveal as="section" className="mx-auto max-w-7xl px-5 py-20 md:px-8 lg:py-24">
       <div className="grid overflow-hidden border border-line bg-white lg:grid-cols-2">

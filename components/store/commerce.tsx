@@ -98,7 +98,8 @@ export function ProductPurchase({
   const inStock = Boolean(variant && variantInStock(variant));
   const images = product.images;
   const activeImage = variant?.imageUrl ? images.find((image) => image.url === variant.imageUrl) || { url: variant.imageUrl, alt: product.title } : images[imageIndex] || images[0];
-  const askText = `Hello Crown, I would like to ask about the ${product.title}${variant ? ` (${variant.title})` : ""}.`;
+  // For people who would rather just message: the item, size, quantity, and price, ready to send.
+  const orderText = `Hello Crown, I would like to order:\n${quantity} × ${product.title}${variant ? ` (${variant.title})` : ""} — ${formatMoney(price.price * quantity, currency)}\n\nMy name:\nDelivery address:`;
 
   // Show the slim add-to-bag bar on phones once the main buttons scroll away.
   useEffect(() => {
@@ -174,7 +175,7 @@ export function ProductPurchase({
 
       <div>
         <p className="eyebrow">{categoryName}</p>
-        <h1 className="gold-text mt-3 font-serif text-[2.3rem] font-bold leading-[1.1] md:text-5xl">{product.title}</h1>
+        <h1 className="gather gold-text mt-3 font-serif text-[2.3rem] font-bold leading-[1.1] md:text-5xl">{product.title}</h1>
         <div className="tabular mt-5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <p className="font-serif text-3xl font-bold text-brass" aria-live="polite">
             {formatMoney(price.price, currency)}
@@ -236,7 +237,7 @@ export function ProductPurchase({
           </button>
         </div>
         <a
-          href={whatsappUrl(whatsappNumber, askText)}
+          href={whatsappUrl(whatsappNumber, orderText)}
           target="_blank"
           rel="noreferrer"
           className="mt-3 inline-flex items-center gap-2 text-sm text-navy underline decoration-gold underline-offset-4 hover:text-brass"
@@ -244,7 +245,7 @@ export function ProductPurchase({
           data-track-id="product-whatsapp"
           data-track-type="whatsapp_click"
         >
-          <MessageCircle size={14} aria-hidden /> {product.options.some((option) => option.name === "Colour") || /colour|mixed/i.test(product.title) ? "Ask about colours or stock on WhatsApp" : "Ask about stock or sizes on WhatsApp"}
+          <MessageCircle size={14} aria-hidden /> Or order directly on WhatsApp
         </a>
 
         <ul className="mt-8 grid gap-3 border-y border-line py-5 text-sm sm:grid-cols-3">
@@ -434,7 +435,7 @@ export function ShopBrowser({
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
         <div>
           <span className="crown-rule mb-4" aria-hidden />
-          <h1 className="gold-text font-serif text-[2.4rem] font-bold leading-tight md:text-6xl">{heading}</h1>
+          <h1 className="gather gold-text font-serif text-[2.4rem] font-bold leading-tight md:text-6xl">{heading}</h1>
           {intro ? <p className="mt-4 max-w-2xl font-serif text-lg italic leading-8 text-muted">{intro}</p> : null}
         </div>
         <label className="relative block w-full lg:w-80">

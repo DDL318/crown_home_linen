@@ -92,7 +92,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       {related.length > 0 ? (
         <section className="mt-24 border-t border-line pt-16" aria-labelledby="related-title">
           <span className="crown-rule mb-4" aria-hidden />
-          <h2 id="related-title" className="gold-text font-serif text-3xl font-bold md:text-4xl">
+          <h2 id="related-title" className="gather gold-text font-serif text-3xl font-bold md:text-4xl">
             Goes well with
           </h2>
           <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-12 md:gap-x-6 lg:grid-cols-4">

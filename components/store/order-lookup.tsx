@@ -54,7 +54,7 @@ export function OrderLookup({ currency, initialNumber = "", whatsappHref }: { cu
     <div className="mx-auto max-w-3xl px-5 py-14 md:py-20">
       <span className="crown-rule mb-4" aria-hidden />
       <p className="eyebrow">Your orders</p>
-      <h1 className="gold-text mt-3 font-serif text-4xl font-bold md:text-5xl">Track an order</h1>
+      <h1 className="gather gold-text mt-3 font-serif text-4xl font-bold md:text-5xl">Track an order</h1>
       <p className="mt-4 max-w-xl font-serif text-lg italic leading-8 text-muted">Enter the order number from your confirmation (it starts with CHL-) and the phone number you used.</p>
       <form onSubmit={(event) => { event.preventDefault(); void onSubmit(new FormData(event.currentTarget)); }} className="mt-8 grid gap-4 border border-line bg-white p-5 sm:grid-cols-[1fr_1fr_auto] sm:items-end md:p-6">
         <div>
@@ -83,7 +83,7 @@ export function OrderLookup({ currency, initialNumber = "", whatsappHref }: { cu
           <header className="navy-ground flex flex-wrap items-end justify-between gap-4 p-6">
             <div>
               <p className="eyebrow">Order {order.number}</p>
-              <h2 className="gold-text-light mt-2 font-serif text-3xl font-bold">{order.status === "cancelled" ? "Cancelled" : order.statusLabel}</h2>
+              <h2 className="gather gold-text-light mt-2 font-serif text-3xl font-bold">{order.status === "cancelled" ? "Cancelled" : order.statusLabel}</h2>
             </div>
             <p className="text-sm text-mist">
               {order.customerName} · {order.city} · {formatWhen(order.createdAt)}

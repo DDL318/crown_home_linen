@@ -197,6 +197,9 @@ export function Header({
     router.push(query.trim() ? `/shop?q=${encodeURIComponent(query.trim())}` : "/shop");
   }
 
+  // The front door (home page) is a full-screen welcome with its own links.
+  if (pathname === "/") return null;
+
   return (
     <>
       <a href="#main" className="sr-only z-[60] bg-navy px-4 py-3 text-paper focus:not-sr-only focus:fixed focus:left-3 focus:top-3">
@@ -436,6 +439,7 @@ export function Footer({
   ] as const;
   // The product page has its own sticky bar on phones; keep the float out of its way.
   const hideFloat = pathname.startsWith("/products/") || pathname === "/cart";
+  if (pathname === "/") return null;
   return (
     <footer className="navy-ground on-navy mt-auto border-t-2 border-gold">
       <div className="mx-auto grid max-w-7xl gap-12 px-5 py-16 md:px-8 lg:grid-cols-[1.3fr_1fr_1fr_1fr]">

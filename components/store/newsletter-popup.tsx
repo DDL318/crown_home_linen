@@ -24,7 +24,7 @@ export function NewsletterPopup({ title, body }: { title: string; body: string }
   const closed = useRef(false);
   const card = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
-  const quiet = QUIET.some((path) => pathname.startsWith(path));
+  const quiet = pathname === "/" || QUIET.some((path) => pathname.startsWith(path));
 
   useEffect(() => {
     if (quiet || closed.current || dismissed()) return;

@@ -127,11 +127,9 @@ export function ProductPlate({
 }) {
   const tone = plateTone(product);
   const kind = plateKind(product);
-  const sizes = product.options.find((option) => option.name === "Size")?.values ?? [];
   const colours = product.options.find((option) => option.name === "Colour")?.values ?? [];
   const mixed = /colour|mixed/i.test(product.title) || /mixed/i.test(product.material) || colours.some((value) => /mixed/i.test(value));
   const navy = tone === "navy";
-  const label = sizes.length > 1 ? `${sizes.length} sizes · ${sizes[0]} – ${sizes[sizes.length - 1]}` : sizes[0] ? `${sizes[0]} in` : colours.join(" · ");
   return (
     <div
       className={`relative flex h-full w-full flex-col items-center justify-center overflow-hidden ${navy ? "navy-ground" : "ivory-ground"} ${className}`}
@@ -156,16 +154,6 @@ export function ProductPlate({
               ))}
             </div>
           ) : null}
-          {label ? (
-            <p className={`label tabular absolute inset-x-0 bottom-6 px-6 text-center text-[9px] ${navy ? "text-gold-strap" : "text-brass"} ${size === "large" ? "md:text-[10.5px]" : ""}`}>{label}</p>
-          ) : null}
-          <Image
-            src="/images/brand/crown-mark.png"
-            alt=""
-            width={560}
-            height={397}
-            className={`absolute left-1/2 top-6 w-7 -translate-x-1/2 transition-transform duration-700 ease-out group-hover:scale-110 ${navy ? "opacity-90" : "opacity-80"}`}
-          />
         </>
       ) : null}
     </div>
