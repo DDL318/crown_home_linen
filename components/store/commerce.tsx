@@ -175,7 +175,7 @@ export function ProductPurchase({
 
       <div>
         <p className="eyebrow">{categoryName}</p>
-        <h1 className="gold-text mt-3 font-serif text-[2.3rem] font-bold leading-[1.1] md:text-5xl">{product.title}</h1>
+        <h1 className="gather gold-text mt-3 font-serif text-[2.3rem] font-bold leading-[1.1] md:text-5xl">{product.title}</h1>
         <div className="tabular mt-5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <p className="font-serif text-3xl font-bold text-brass" aria-live="polite">
             {formatMoney(price.price, currency)}
@@ -435,7 +435,7 @@ export function ShopBrowser({
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
         <div>
           <span className="crown-rule mb-4" aria-hidden />
-          <h1 className="gold-text font-serif text-[2.4rem] font-bold leading-tight md:text-6xl">{heading}</h1>
+          <h1 className="gather gold-text font-serif text-[2.4rem] font-bold leading-tight md:text-6xl">{heading}</h1>
           {intro ? <p className="mt-4 max-w-2xl font-serif text-lg italic leading-8 text-muted">{intro}</p> : null}
         </div>
         <label className="relative block w-full lg:w-80">

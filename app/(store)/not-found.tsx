@@ -8,7 +8,7 @@ export default function StoreNotFound() {
       <div>
         <span className="crown-rule mb-4" aria-hidden />
         <p className="eyebrow">Page not found</p>
-        <h1 className="gold-text mt-3 font-serif text-4xl font-bold leading-tight md:text-6xl">That item is not on the shelf</h1>
+        <h1 className="gather gold-text mt-3 font-serif text-4xl font-bold leading-tight md:text-6xl">That item is not on the shelf</h1>
         <p className="mt-5 max-w-lg font-serif text-lg italic leading-8 text-muted">The link may be old, or the item may have been renamed. Everything Crown sells is in the shop, and we stock more than is listed.</p>
         <div className="mt-9 flex flex-wrap gap-3">
           <Link href="/shop" className="btn-ink">

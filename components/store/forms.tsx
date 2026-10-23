@@ -318,7 +318,7 @@ export function CartView() {
     return (
       <div className="mx-auto max-w-2xl px-5 py-20 text-center md:py-28">
         <ShoppingBag className="mx-auto text-gold" size={34} aria-hidden />
-        <h1 className="gold-text mt-5 font-serif text-4xl font-bold md:text-5xl">Your bag is empty</h1>
+        <h1 className="gather gold-text mt-5 font-serif text-4xl font-bold md:text-5xl">Your bag is empty</h1>
         <p className="mt-3 font-serif text-lg italic text-muted">Add the sizes you need, then send the order on WhatsApp.</p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link href="/collections/bedsheets" className="btn-ink">Bedsheets</Link>
@@ -334,7 +334,7 @@ export function CartView() {
     <div className="mx-auto grid max-w-7xl gap-10 px-5 py-12 md:px-8 lg:grid-cols-[1.15fr_0.85fr] lg:gap-14 lg:py-16">
       <div>
         <span className="crown-rule mb-4" aria-hidden />
-        <h1 className="gold-text font-serif text-4xl font-bold md:text-5xl">Your bag</h1>
+        <h1 className="gather gold-text font-serif text-4xl font-bold md:text-5xl">Your bag</h1>
         <p className="mt-2 text-sm text-muted">{pieces} {pieces === 1 ? "piece" : "pieces"} · prices are Crown&apos;s retail prices in LKR</p>
         <ul className="mt-8 divide-y divide-line border-y border-line">
           {cart.lines.map((line) => (

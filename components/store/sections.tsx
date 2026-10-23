@@ -43,7 +43,7 @@ function SectionHeading({ eyebrow, title, subtitle, align = "left", as: Tag = "h
   return (
     <div className={align === "center" ? "mx-auto max-w-2xl text-center" : "max-w-2xl"}>
       {eyebrow ? <p className="eyebrow mb-3">{eyebrow}</p> : null}
-      <Tag className="gold-text font-serif text-[2.1rem] font-bold leading-[1.1] md:text-5xl">{title}</Tag>
+      <Tag className="gather gold-text font-serif text-[2.1rem] font-bold leading-[1.1] md:text-5xl">{title}</Tag>
       {subtitle ? <p className="mt-4 font-serif text-[17px] italic leading-7 text-muted">{subtitle}</p> : null}
     </div>
   );
@@ -229,9 +229,9 @@ function SectionBlock({ section, snapshot, primary, context }: { section: Sectio
               <span className="crown-rule mb-4" aria-hidden />
               <p className="eyebrow">{section.eyebrow}</p>
               {onWholesalePage || primary ? (
-                <h1 className="gold-text mt-3 font-serif text-[2.3rem] font-bold leading-[1.08] md:text-[3.4rem]">{section.title}</h1>
+                <h1 className="gather gold-text mt-3 font-serif text-[2.3rem] font-bold leading-[1.08] md:text-[3.4rem]">{section.title}</h1>
               ) : (
-                <h2 className="gold-text mt-3 font-serif text-[2.1rem] font-bold leading-[1.1] md:text-5xl">{section.title}</h2>
+                <h2 className="gather gold-text mt-3 font-serif text-[2.1rem] font-bold leading-[1.1] md:text-5xl">{section.title}</h2>
               )}
               <p className="mt-5 max-w-xl font-serif text-lg italic leading-8 text-mist">{section.body}</p>
               <dl className="stagger mt-10 grid gap-x-8 gap-y-6 sm:grid-cols-2">
@@ -390,9 +390,9 @@ function SectionBlock({ section, snapshot, primary, context }: { section: Sectio
           <div className="mx-auto max-w-7xl px-5 py-20 md:px-8">
             <span className="crown-rule mb-4" aria-hidden />
             {primary ? (
-              <h1 className="gold-text font-serif text-[2.1rem] font-bold md:text-5xl">{section.title}</h1>
+              <h1 className="gather gold-text font-serif text-[2.1rem] font-bold md:text-5xl">{section.title}</h1>
             ) : (
-              <h2 className="gold-text font-serif text-[2.1rem] font-bold md:text-5xl">{section.title}</h2>
+              <h2 className="gather gold-text font-serif text-[2.1rem] font-bold md:text-5xl">{section.title}</h2>
             )}
             <div className="stagger mt-10 grid gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
               {section.items.map((item) => (
@@ -434,7 +434,7 @@ function SectionBlock({ section, snapshot, primary, context }: { section: Sectio
           <span className="absolute inset-0 bg-gradient-to-r from-navy-deep via-navy-deep/70 to-transparent" aria-hidden />
           <div className="relative z-10 flex min-h-[420px] flex-col justify-end p-8 text-white md:p-14">
             <p className="eyebrow text-gold-strap">{section.eyebrow}</p>
-            <h2 className="gold-text-light mt-3 max-w-lg font-serif text-4xl font-bold md:text-5xl">{section.title}</h2>
+            <h2 className="gather gold-text-light mt-3 max-w-lg font-serif text-4xl font-bold md:text-5xl">{section.title}</h2>
             {section.body ? <p className="mt-3 max-w-md font-serif text-lg italic text-white/85">{section.body}</p> : null}
             <Link href={section.buttonHref} className="btn-brass mt-7 w-fit" data-track={section.buttonLabel} data-track-id={`promo-${section.id}`}>
               {section.buttonLabel}
@@ -464,7 +464,7 @@ function SectionBlock({ section, snapshot, primary, context }: { section: Sectio
           <div className="mx-auto grid max-w-7xl items-center gap-8 px-5 py-16 md:px-8 lg:grid-cols-[1fr_1fr] lg:py-20">
             <div>
               <span className="crown-rule mb-4" aria-hidden />
-              <h2 className="gold-text font-serif text-3xl font-bold md:text-4xl">{section.title}</h2>
+              <h2 className="gather gold-text font-serif text-3xl font-bold md:text-4xl">{section.title}</h2>
               <p className="mt-3 max-w-md font-serif text-[17px] italic leading-7 text-muted">{section.subtitle}</p>
             </div>
             <SubscribeForm source="home" buttonLabel={section.buttonLabel} inline />
@@ -541,9 +541,9 @@ function SectionBlock({ section, snapshot, primary, context }: { section: Sectio
           <div className="max-w-3xl">
             <span className="crown-rule mb-4" aria-hidden />
             {heading === "h1" ? (
-              <h1 className="gold-text font-serif text-[2.4rem] font-bold leading-tight md:text-6xl">{section.title}</h1>
+              <h1 className="gather gold-text font-serif text-[2.4rem] font-bold leading-tight md:text-6xl">{section.title}</h1>
             ) : (
-              <h2 className="gold-text font-serif text-[2.1rem] font-bold leading-tight md:text-5xl">{section.title}</h2>
+              <h2 className="gather gold-text font-serif text-[2.1rem] font-bold leading-tight md:text-5xl">{section.title}</h2>
             )}
             <div className="prose-house mt-8 text-[16px] leading-8 text-ink/85">
               {paragraphs(section.body).map((paragraph) => {
