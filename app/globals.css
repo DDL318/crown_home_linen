@@ -644,6 +644,111 @@ body {
     to { transform: none; }
   }
 
+
+  /* ------------------------------------------------------------------
+     The front door (components/store/front-door.tsx). The crown is two
+     copies of the mark, each clipped to one half and hinged at its outer
+     edge; "Shop now" swings them open and light floods through.
+     ------------------------------------------------------------------ */
+  .door-aura {
+    background: radial-gradient(circle, rgba(251, 205, 45, 0.16), rgba(251, 205, 45, 0.05) 42%, transparent 68%);
+  }
+
+  .door-stage {
+    perspective: 1400px;
+    animation: rise 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.05s both;
+  }
+
+  .door-crown {
+    width: min(66vw, 46svh, 420px);
+    transform-style: preserve-3d;
+  }
+
+  .door-half {
+    display: block;
+    width: 100%;
+    height: auto;
+    backface-visibility: hidden;
+    transition: transform 1s cubic-bezier(0.6, 0, 0.3, 1) 0.15s, opacity 0.3s ease 0.9s;
+  }
+
+  /* The halves overlap by a hair so no seam shows while the door is shut. */
+  .door-left {
+    clip-path: inset(0 49.6% 0 0);
+    transform-origin: 0% 50%;
+  }
+
+  .door-right {
+    clip-path: inset(0 0 0 49.6%);
+    transform-origin: 100% 50%;
+  }
+
+  .door-stage:hover .door-left {
+    transform: rotateY(-7deg);
+  }
+
+  .door-stage:hover .door-right {
+    transform: rotateY(7deg);
+  }
+
+  .is-opening .door-left,
+  .is-opening .door-stage:hover .door-left {
+    transform: rotateY(-112deg);
+    opacity: 0;
+  }
+
+  .is-opening .door-right,
+  .is-opening .door-stage:hover .door-right {
+    transform: rotateY(112deg);
+    opacity: 0;
+  }
+
+  /* A line of light appears in the seam just before the doors part. */
+  .door-seam {
+    opacity: 0;
+    transform: translateX(-50%);
+    background: linear-gradient(transparent, #fff6d6 20%, #fff6d6 80%, transparent);
+    box-shadow: 0 0 18px 4px rgba(255, 236, 170, 0.7);
+  }
+
+  .is-opening .door-seam {
+    animation: door-seam 0.85s ease-out forwards;
+  }
+
+  @keyframes door-seam {
+    0% { opacity: 0; transform: translateX(-50%) scaleY(0.2); }
+    35% { opacity: 1; transform: translateX(-50%) scaleY(1); }
+    100% { opacity: 0; transform: translateX(-50%) scaleY(1); }
+  }
+
+  /* The light beyond the doors grows until it is the shop's ivory. */
+  .door-light {
+    background: radial-gradient(circle, #fffdf6 0%, #faf7f0 55%, rgba(250, 247, 240, 0) 72%);
+    transform: translate(-50%, -50%) scale(0);
+  }
+
+  .is-opening .door-light {
+    animation: door-flood 0.9s cubic-bezier(0.55, 0, 0.25, 1) 0.55s forwards;
+  }
+
+  @keyframes door-flood {
+    from { transform: translate(-50%, -50%) scale(0); }
+    to { transform: translate(-50%, -50%) scale(42); }
+  }
+
+  .is-opening .door-crown::after {
+    display: none;
+  }
+
+  /* Words and links step back as the doors begin to move. */
+  .is-opening .door-copy {
+    animation: door-out 0.35s ease forwards !important;
+  }
+
+  @keyframes door-out {
+    to { opacity: 0; transform: translateY(10px); }
+  }
+
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -660,4 +765,5 @@ body {
   }
   .gold-text, .gold-text-light, .hero-sheen { animation: none !important; }
   .crown-gleam::after, .btn-brass::after { display: none; }
+  .door-stage, .door-half { animation: none !important; transition: none !important; }
 }
