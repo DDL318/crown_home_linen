@@ -1,15 +1,14 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, MessageCircle } from "lucide-react";
+import { CROWN, DoorGround, useOpenDoors } from "@/components/store/door-reveal";
 
-const CROWN = { src: "/images/brand/crown-mark.png", width: 560, height: 397 };
-// The doors slide apart and the navy dissolves in about 1.65 s; the shop is
-// shown once only the cream page is left.
-const OPEN_MS = 1700;
+// The words step back first; then the doors take over and slide apart.
+const WORDS_OUT_MS = 450;
 // The arrival plays once per visit (per browser tab).
 const SEEN = "crown-door-seen";
 
@@ -35,8 +34,9 @@ function step(order: number) {
 
 // The home page: one screen, the crown in the middle on the navy ground.
 // On the first visit the crown fades up and the letters of CROWN glide
-// together. "Shop now" slides the two halves of the crown apart like sliding
-// doors while the navy quietly dissolves into the cream of the shop.
+// together. "Shop now" splits the navy down the middle like sliding doors,
+// each half carrying half of the crown, and the shop is waiting behind them
+// (see door-reveal.tsx).
 export function FrontDoor({
   headline,
   line,
@@ -49,14 +49,15 @@ export function FrontDoor({
   phone: string;
 }) {
   const router = useRouter();
+  const openDoors = useOpenDoors();
+  const crown = useRef<HTMLSpanElement>(null);
   const [opening, setOpening] = useState(false);
-  const [waiting, setWaiting] = useState(false);
   const returning = useSyncExternalStore(noSubscribe, readSeen, () => false);
 
   // Remember the arrival once it has played (or the door is opened), not on
   // load: marking it straight away would cut the first arrival short.
   // The shop itself is fetched in the background by the prefetching links
-  // below, so it is ready by the time the doors have opened.
+  // below, so it is ready by the time the doors open.
   useEffect(() => {
     const timer = window.setTimeout(markSeen, 3200);
     return () => window.clearTimeout(timer);
@@ -68,35 +69,29 @@ export function FrontDoor({
     event.preventDefault();
     if (opening) return;
     markSeen();
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || !crown.current) {
       router.push("/shop");
       return;
     }
     setOpening(true);
-    window.setTimeout(() => router.push("/shop"), OPEN_MS);
-    // On a slow connection the shop may not be there yet: show a quiet loader.
-    window.setTimeout(() => setWaiting(true), OPEN_MS + 250);
+    window.setTimeout(() => {
+      if (crown.current) openDoors({ to: "/shop", crown: crown.current.getBoundingClientRect() });
+    }, WORDS_OUT_MS);
   }
 
   return (
-    <>
     <section
       className={`front-door navy-ground relative isolate flex h-svh min-h-[520px] flex-col overflow-hidden text-[#fbf8f1] ${opening ? "is-opening" : ""} ${returning ? "is-returning" : ""}`}
       aria-label="Crown"
     >
-      {/* Soft gold glow behind the crown, and the double frame of the brand. */}
-      <span className="door-aura pointer-events-none absolute left-1/2 top-[42%] -z-10 h-[90vmin] w-[90vmin] -translate-x-1/2 -translate-y-1/2 rounded-full" aria-hidden />
-      <span className="pointer-events-none absolute inset-3 border-2 border-[#fbf8f1]/70 sm:inset-5" aria-hidden />
-      <span className="pointer-events-none absolute inset-[18px] border border-gold/60 sm:inset-[29px]" aria-hidden />
-      {["left-3 top-3 sm:left-5 sm:top-5", "right-3 top-3 sm:right-5 sm:top-5", "bottom-3 left-3 sm:bottom-5 sm:left-5", "bottom-3 right-3 sm:bottom-5 sm:right-5"].map((corner) => (
-        <span key={corner} className={`pointer-events-none absolute ${corner} h-2 w-2 -translate-x-[3px] -translate-y-[3px] rotate-45 bg-gold`} aria-hidden />
-      ))}
+      <DoorGround />
 
       <div className="relative flex flex-1 flex-col items-center justify-center px-8 text-center">
         <Link href="/shop" prefetch onClick={enter} aria-label="Open the shop" className="door-stage door-in relative block" data-track="Crown door" data-track-id="door-crown">
-          <span className="door-crown crown-gleam relative block">
-            <Image src={CROWN.src} alt="" width={CROWN.width} height={CROWN.height} priority className="door-half door-left" />
-            <Image src={CROWN.src} alt="" width={CROWN.width} height={CROWN.height} priority className="door-half door-right absolute inset-0" />
+          <span ref={crown} className="door-crown crown-gleam relative block">
+            {/* One whole crown, so no seam can show; it is split only on the
+                sliding doors. Unoptimised so the doors reuse the same file. */}
+            <Image src={CROWN.src} alt="" width={CROWN.width} height={CROWN.height} loading="eager" fetchPriority="high" unoptimized className="block h-auto w-full" />
           </span>
         </Link>
 
@@ -135,11 +130,5 @@ export function FrontDoor({
         </Link>
       </nav>
     </section>
-    {waiting ? (
-      <div className="door-wait fixed inset-0 grid place-items-center" role="status" aria-label="Opening the shop">
-        <div className="house-loader" />
-      </div>
-    ) : null}
-    </>
   );
 }

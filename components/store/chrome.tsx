@@ -513,7 +513,7 @@ export function Footer({
           data-track="WhatsApp"
           data-track-id="float-whatsapp"
           data-track-type="whatsapp_click"
-          className="fixed bottom-5 right-5 z-30 flex h-14 w-14 items-center justify-center gap-2 rounded-full bg-[#187a42] text-white shadow-[0_10px_28px_-6px_rgba(16,31,56,0.55)] ring-2 ring-gold-bright/80 transition-transform hover:scale-105 md:h-auto md:w-auto md:px-5 md:py-3.5"
+          className="fixed bottom-20 right-5 z-30 flex h-14 w-14 items-center justify-center gap-2 rounded-full bg-[#187a42] text-white shadow-[0_10px_28px_-6px_rgba(16,31,56,0.55)] ring-2 ring-gold-bright/80 transition-transform hover:scale-105 md:h-auto md:w-auto md:px-5 md:py-3.5"
         >
           <MessageCircle size={20} aria-hidden />
           <span className="label hidden text-[10px] md:inline">WhatsApp us</span>
