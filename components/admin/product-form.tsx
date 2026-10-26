@@ -3,8 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { deleteProductAction, saveProductAction, uploadImageAction } from "@/app/actions/admin";
+import { sizeOrder, type KnownOptions } from "@/lib/catalog";
 import { formatMoney } from "@/lib/format";
 import type { Category, Product, ProductOption, ProductVariant } from "@/lib/types";
+
+const SIZE = "Size";
+const COLOUR = "Colour";
 
 function cartesian(options: ProductOption[]) {
   return options.reduce<Record<string, string>[]>(
@@ -13,59 +17,174 @@ function cartesian(options: ProductOption[]) {
   );
 }
 
+// "90x100", "90 X 100" and "90×100" are all the same size.
+function cleanSize(value: string) {
+  return value.trim().replace(/\s*[x×]\s*/i, "×");
+}
+
+// Prices are kept in cents; the form shows and takes plain rupees.
+function rupees(cents: number | null) {
+  return cents === null ? "" : String(cents / 100);
+}
+function cents(value: string) {
+  return Math.round((Number(value) || 0) * 100);
+}
+
+function valuesOf(product: Product, name: string) {
+  return product.options.find((option) => option.name === name)?.values ?? [];
+}
+
+// Sizes and colours replace their own option groups, keeping their place;
+// any other group a piece already has is left as it is.
+function withChoices(product: Product, sizes: string[], colours: string[]): Product {
+  const chosen: Record<string, string[]> = { [SIZE]: sizes, [COLOUR]: colours };
+  const options = product.options.map((option) => (option.name in chosen ? { ...option, values: chosen[option.name] } : option));
+  for (const name of [SIZE, COLOUR]) {
+    if (!options.some((option) => option.name === name)) options.push({ name, values: chosen[name] });
+  }
+  const groups = options.filter((option) => option.values.length);
+  const combos = groups.length ? cartesian(groups) : [{}];
+  const variants = combos.map((selected): ProductVariant => {
+    const same = (variant: ProductVariant) => groups.every((group) => variant.options[group.name] === selected[group.name]);
+    const existing = product.variants.find(same);
+    if (existing) return existing;
+    // A new colour of an existing size starts at that size's price.
+    const sibling = selected[SIZE] ? product.variants.find((variant) => variant.options[SIZE] === selected[SIZE]) : undefined;
+    const title = Object.values(selected).join(" / ") || "Default";
+    const key = title.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "default";
+    return {
+      id: `${product.id}-${key}`,
+      title,
+      sku: `${product.sku || "SKU"}-${key}`.toUpperCase(),
+      price: sibling?.price ?? product.price,
+      compareAtPrice: sibling?.compareAtPrice ?? product.compareAtPrice,
+      options: selected,
+      available: true,
+      stock: 12,
+    };
+  });
+  return { ...product, options: groups, variants };
+}
+
+function Choice({ on, label, onClick }: { on: boolean; label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      onClick={onClick}
+      className={`border px-3 py-1.5 text-sm transition-colors ${on ? "border-ink bg-ink text-paper" : "border-line bg-white hover:border-ink"}`}
+    >
+      {label}
+    </button>
+  );
+}
+
+// Tap the ready-made choices, or type a new one and press Add (or Enter).
+function ChoiceGroup({
+  title,
+  hint,
+  chosen,
+  suggested,
+  more,
+  moreLabel,
+  placeholder,
+  clean,
+  onChange,
+}: {
+  title: string;
+  hint: string;
+  chosen: string[];
+  suggested: string[];
+  more?: string[];
+  moreLabel?: string;
+  placeholder: string;
+  clean: (value: string) => string;
+  onChange: (values: string[]) => void;
+}) {
+  const [typed, setTyped] = useState("");
+  const [showMore, setShowMore] = useState(false);
+  const toggle = (value: string) => onChange(chosen.includes(value) ? chosen.filter((item) => item !== value) : [...chosen, value]);
+  const first = [...suggested, ...chosen.filter((value) => !suggested.includes(value))];
+  const rest = (more ?? []).filter((value) => !first.includes(value));
+  function add() {
+    const value = clean(typed);
+    if (value && !chosen.includes(value)) onChange([...chosen, value]);
+    setTyped("");
+  }
+  return (
+    <div>
+      <h3 className="text-sm font-semibold">{title}</h3>
+      <p className="mt-1 text-xs text-muted">{hint}</p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {first.map((value) => (
+          <Choice key={value} on={chosen.includes(value)} label={value} onClick={() => toggle(value)} />
+        ))}
+        {rest.length && !showMore ? (
+          <button type="button" className="px-2 text-sm text-muted underline" onClick={() => setShowMore(true)}>
+            {moreLabel}
+          </button>
+        ) : null}
+        {showMore ? rest.map((value) => <Choice key={value} on={false} label={value} onClick={() => toggle(value)} />) : null}
+      </div>
+      <div className="mt-3 flex max-w-sm gap-2">
+        <input
+          className="field"
+          value={typed}
+          placeholder={placeholder}
+          onChange={(event) => setTyped(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              add();
+            }
+          }}
+        />
+        <button type="button" className="btn-line shrink-0" onClick={add}>
+          Add
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function ProductForm({
   product,
   categories,
   currency,
+  known,
   canDelete,
 }: {
   product: Product;
   categories: Category[];
   currency: string;
+  known: KnownOptions;
   canDelete: boolean;
 }) {
   const router = useRouter();
-  const [draft, setDraft] = useState(product);
-  const [optionText, setOptionText] = useState(product.options.map((option) => option.values.join(", ")));
+  // A new piece starts with its single "Default" variant, so it can be
+  // ordered even before any sizes are chosen.
+  const [draft, setDraft] = useState(() => (product.variants.length ? product : withChoices(product, [], [])));
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
+  const sizes = valuesOf(draft, SIZE);
+  const colours = valuesOf(draft, COLOUR);
+  const hasChoices = draft.options.length > 0;
+  const allSizes = [...new Set(Object.values(known.sizes).flat())].sort(sizeOrder);
 
-  function parsedOptions() {
-    return draft.options
-      .map((option, index) => ({
-        name: option.name.trim(),
-        values: (optionText[index] || "").split(",").map((value) => value.trim()).filter(Boolean),
-      }))
-      .filter((option) => option.name && option.values.length);
+  function choose(nextSizes: string[], nextColours: string[]) {
+    setDraft(withChoices(draft, [...nextSizes].sort(sizeOrder), nextColours));
   }
 
-  function rebuild() {
-    const options = parsedOptions();
-    const combos = options.length ? cartesian(options) : [{}];
-    const variants: ProductVariant[] = combos.map((selected) => {
-      const title = Object.values(selected).join(" / ") || "Default";
-      const existing = draft.variants.find((variant) => variant.title === title);
-      const key = title.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "default";
-      return (
-        existing || {
-          id: `${draft.id}-${key}`,
-          title,
-          sku: `${draft.sku || "SKU"}-${key}`.toUpperCase(),
-          price: draft.price,
-          compareAtPrice: draft.compareAtPrice,
-          options: selected,
-          available: true,
-          stock: 12,
-        }
-      );
-    });
-    setDraft({ ...draft, options, variants });
+  // With no sizes or colours, the one variant simply follows the price.
+  function setPrice(price: number) {
+    setDraft({ ...draft, price, variants: hasChoices ? draft.variants : draft.variants.map((variant) => ({ ...variant, price })) });
   }
 
   async function save() {
     setPending(true);
-    const options = parsedOptions();
-    const result = await saveProductAction({ ...draft, options, price: Number(draft.price) || 0 });
+    // The price shown on the shop cards is the lowest size's.
+    const price = hasChoices && draft.variants.length ? Math.min(...draft.variants.map((variant) => variant.price)) : draft.price;
+    const result = await saveProductAction({ ...draft, price });
     setPending(false);
     setMessage("error" in result ? result.error || "Could not save." : "Saved.");
     if ("ok" in result && result.slug) router.replace(`/admin/products/${draft.id}`);
@@ -113,12 +232,15 @@ export function ProductForm({
         <label className="text-sm md:col-span-2">Description
           <textarea className="field mt-1 min-h-36" value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} />
         </label>
-        <label className="text-sm">Price in cents
-          <input className="field mt-1" type="number" value={draft.price} onChange={(event) => setDraft({ ...draft, price: Number(event.target.value) })} />
-          <span className="mt-1 block text-xs text-muted">{formatMoney(Number(draft.price) || 0, currency)}. 4800 means 48.00.</span>
+        <label className="text-sm">{hasChoices ? "Usual price, Rs" : "Price, Rs"}
+          <input className="field mt-1" type="number" min="0" step="any" inputMode="decimal" value={rupees(draft.price)} onChange={(event) => setPrice(cents(event.target.value))} />
+          <span className="mt-1 block text-xs text-muted">
+            {formatMoney(draft.price, currency)}.{hasChoices ? " New sizes start at this; set each size below." : " Type 2450 for Rs 2,450."}
+          </span>
         </label>
-        <label className="text-sm">Compare-at, cents
-          <input className="field mt-1" type="number" value={draft.compareAtPrice ?? ""} onChange={(event) => setDraft({ ...draft, compareAtPrice: event.target.value === "" ? null : Number(event.target.value) })} />
+        <label className="text-sm">Was, Rs (optional)
+          <input className="field mt-1" type="number" min="0" step="any" inputMode="decimal" value={rupees(draft.compareAtPrice)} onChange={(event) => setDraft({ ...draft, compareAtPrice: event.target.value === "" ? null : cents(event.target.value) })} />
+          <span className="mt-1 block text-xs text-muted">Shown crossed out, for a sale.</span>
         </label>
         <label className="text-sm">SKU
           <input className="field mt-1" value={draft.sku} onChange={(event) => setDraft({ ...draft, sku: event.target.value })} />
@@ -147,6 +269,7 @@ export function ProductForm({
 
       <section>
         <h2 className="font-serif text-3xl">Photographs</h2>
+        <p className="mt-2 text-sm text-muted">One set of photographs for the piece, shown for every size and colour.</p>
         <div className="mt-4 space-y-3">
           {draft.images.map((image, index) => (
             <div key={image.id} className="grid gap-2 md:grid-cols-[1fr_1fr_auto]">
@@ -174,65 +297,55 @@ export function ProductForm({
       </section>
 
       <section>
-        <h2 className="font-serif text-3xl">Options</h2>
-        <p className="mt-2 text-sm text-muted">Two groups at most. Separate values with commas, then rebuild the variants.</p>
-        <div className="mt-4 space-y-3">
-          {draft.options.map((option, index) => (
-            <div key={`${option.name}-${index}`} className="grid gap-2 md:grid-cols-2">
-              <input className="field" value={option.name} placeholder="Color" onChange={(event) => {
-                const options = draft.options.slice();
-                options[index] = { ...option, name: event.target.value };
-                setDraft({ ...draft, options });
-              }} />
-              <input className="field" value={optionText[index] || ""} placeholder="Ivory, Sage" onChange={(event) => {
-                const next = optionText.slice();
-                next[index] = event.target.value;
-                setOptionText(next);
-              }} />
-            </div>
-          ))}
+        <h2 className="font-serif text-3xl">Sizes &amp; prices</h2>
+        <div className="mt-4 space-y-6">
+          <ChoiceGroup
+            title="Sizes"
+            hint="Tap every size this piece comes in. Sizes used in this collection are shown first."
+            chosen={sizes}
+            suggested={known.sizes[draft.categoryId] ?? []}
+            more={allSizes}
+            moreLabel="More sizes"
+            placeholder="New size, e.g. 90×100"
+            clean={cleanSize}
+            onChange={(next) => choose(next, colours)}
+          />
+          <ChoiceGroup
+            title="Colours (optional)"
+            hint="Only if the customer chooses a colour. The same photographs are used for all of them."
+            chosen={colours}
+            suggested={known.colours}
+            placeholder="New colour, e.g. Blue & White"
+            clean={(value) => value.trim()}
+            onChange={(next) => choose(sizes, next)}
+          />
         </div>
-        <div className="mt-4 flex gap-3">
-          {draft.options.length < 2 ? (
-            <button type="button" className="btn-line" onClick={() => {
-              setDraft({ ...draft, options: [...draft.options, { name: "", values: [] }] });
-              setOptionText([...optionText, ""]);
-            }}>Add option</button>
-          ) : null}
-          <button type="button" className="btn-line" onClick={rebuild}>Rebuild variants</button>
-        </div>
-        <div className="mt-6 overflow-auto">
-          <table className="admin-table">
-            <thead><tr><th>Variant</th><th>Price</th><th>Stock</th><th>Available</th><th>Image</th></tr></thead>
-            <tbody>
-              {draft.variants.map((variant, index) => (
-                <tr key={variant.id}>
-                  <td>{variant.title}</td>
-                  <td><input className="field" type="number" value={variant.price} onChange={(event) => {
-                    const variants = draft.variants.slice();
-                    variants[index] = { ...variant, price: Number(event.target.value) };
-                    setDraft({ ...draft, variants });
-                  }} /></td>
-                  <td><input className="field" type="number" value={variant.stock} onChange={(event) => {
-                    const variants = draft.variants.slice();
-                    variants[index] = { ...variant, stock: Number(event.target.value) };
-                    setDraft({ ...draft, variants });
-                  }} /></td>
-                  <td><input type="checkbox" checked={variant.available} onChange={(event) => {
-                    const variants = draft.variants.slice();
-                    variants[index] = { ...variant, available: event.target.checked };
-                    setDraft({ ...draft, variants });
-                  }} /></td>
-                  <td><input className="field" value={variant.imageUrl || ""} onChange={(event) => {
-                    const variants = draft.variants.slice();
-                    variants[index] = { ...variant, imageUrl: event.target.value };
-                    setDraft({ ...draft, variants });
-                  }} /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        {hasChoices ? (
+          <div className="mt-6 overflow-auto">
+            <table className="admin-table">
+              <thead><tr><th>{draft.options.map((option) => option.name).join(" · ")}</th><th>Price, Rs</th><th>Available</th></tr></thead>
+              <tbody>
+                {draft.variants.map((variant, index) => (
+                  <tr key={variant.id}>
+                    <td>{variant.title}</td>
+                    <td><input className="field max-w-36" type="number" min="0" step="any" inputMode="decimal" aria-label={`Price for ${variant.title}`} value={rupees(variant.price)} onChange={(event) => {
+                      const variants = draft.variants.slice();
+                      variants[index] = { ...variant, price: cents(event.target.value) };
+                      setDraft({ ...draft, variants });
+                    }} /></td>
+                    <td><input type="checkbox" aria-label={`${variant.title} available`} checked={variant.available} onChange={(event) => {
+                      const variants = draft.variants.slice();
+                      variants[index] = { ...variant, available: event.target.checked };
+                      setDraft({ ...draft, variants });
+                    }} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="mt-6 text-sm text-muted">No sizes chosen: the piece is sold as one item at the price above.</p>
+        )}
       </section>
 
       {message ? <p className="text-sm">{message}</p> : null}

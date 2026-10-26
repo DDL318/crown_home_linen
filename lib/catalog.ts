@@ -102,6 +102,30 @@ export function sizeInCm(size: string) {
   return `${Math.round(Number(match[1]) * 2.54)} × ${Math.round(Number(match[2]) * 2.54)} cm`;
 }
 
+// Measured sizes smallest first; named sizes ("Large") after them.
+export function sizeOrder(a: string, b: string) {
+  const area = (size: string) => (/\d/.test(size) ? size.split(/[×x]/).reduce((total, part) => total * (Number(part) || 0), 1) : Number.MAX_SAFE_INTEGER);
+  return area(a) - area(b) || a.localeCompare(b);
+}
+
+// The sizes (per collection) and colours already used anywhere in the
+// catalogue, offered as ready-made choices when adding a piece.
+export function knownOptions(snapshot: StoreSnapshot) {
+  const sizes: Record<string, string[]> = {};
+  const colours = new Set<string>();
+  for (const product of snapshot.products) {
+    for (const variant of product.variants) {
+      const size = variant.options.Size;
+      if (size && !(sizes[product.categoryId] ??= []).includes(size)) sizes[product.categoryId].push(size);
+      if (variant.options.Colour) colours.add(variant.options.Colour);
+    }
+  }
+  for (const list of Object.values(sizes)) list.sort(sizeOrder);
+  return { sizes, colours: [...colours].sort() };
+}
+
+export type KnownOptions = ReturnType<typeof knownOptions>;
+
 export type SizeRow = { size: string; cm: string; from: number; items: { title: string; slug: string }[] };
 export type SizeGroup = { categoryId: string; name: string; rows: SizeRow[] };
 
@@ -121,9 +145,7 @@ export function sizeGuide(snapshot: StoreSnapshot): SizeGroup[] {
           rows.set(size, row);
         }
       }
-      // Measured sizes smallest first; named sizes ("Large") after them.
-      const area = (size: string) => (/\d/.test(size) ? size.split(/[×x]/).reduce((total, part) => total * (Number(part) || 0), 1) : Number.MAX_SAFE_INTEGER);
-      return { categoryId: category.id, name: category.name, rows: [...rows.values()].sort((a, b) => area(a.size) - area(b.size)) };
+      return { categoryId: category.id, name: category.name, rows: [...rows.values()].sort((a, b) => sizeOrder(a.size, b.size)) };
     })
     .filter((group) => group.rows.length > 0);
 }
