@@ -646,10 +646,9 @@ body {
 
 
   /* ------------------------------------------------------------------
-     The front door (components/store/front-door.tsx). The crown is two
-     copies of the mark, each clipped to one half. "Shop now" slides the
-     halves apart like sliding doors and the navy dissolves into the cream
-     page; there is no light, no flash. About two seconds in all.
+     The front door (components/store/front-door.tsx). "Shop now" slides the
+     navy apart down the middle like sliding doors, each half carrying half
+     of the crown, with the shop already waiting behind. No light, no flash.
      ------------------------------------------------------------------ */
   .door-aura {
     background: radial-gradient(circle, rgba(251, 205, 45, 0.12), rgba(251, 205, 45, 0.04) 42%, transparent 68%);
@@ -659,31 +658,17 @@ body {
     width: min(66vw, 46svh, 420px);
   }
 
+  /* Only the sliding doors split the crown, each showing one half. */
   .door-half {
     display: block;
-    width: 100%;
-    height: auto;
-    transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  /* The halves overlap by a hair so no seam shows while the door is shut. */
   .door-left {
-    clip-path: inset(0 49.6% 0 0);
+    clip-path: inset(0 50% 0 0);
   }
 
   .door-right {
-    clip-path: inset(0 0 0 49.6%);
-  }
-
-  /* A hint on hover: the doors part a few pixels. */
-  .door-stage:hover .door-left,
-  .door-stage:focus-visible .door-left {
-    transform: translateX(-2.5%);
-  }
-
-  .door-stage:hover .door-right,
-  .door-stage:focus-visible .door-right {
-    transform: translateX(2.5%);
+    clip-path: inset(0 0 0 50%);
   }
 
   /* Arrival, first visit only: the crown fades up, then the letters of
@@ -712,38 +697,56 @@ body {
     animation: none;
   }
 
-  /* Opening. Words step back, the halves slide halfway apart and fade, and
-     the navy dissolves into the cream page underneath. */
+  /* Opening. The words step back, then two sliding doors that look
+     exactly like the front door take over (components/store/door-reveal.tsx)
+     and, once the shop is drawn behind them, slide apart, each carrying
+     half of the crown. */
   .is-opening .door-copy {
     animation: door-out 0.45s ease forwards !important;
-  }
-
-  .is-opening .door-left,
-  .is-opening .door-stage:hover .door-left {
-    transform: translateX(-75%);
-    opacity: 0;
-    transition: transform 1.5s cubic-bezier(0.6, 0, 0.3, 1) 0.15s, opacity 0.7s ease 1s;
-  }
-
-  .is-opening .door-right,
-  .is-opening .door-stage:hover .door-right {
-    transform: translateX(75%);
-    opacity: 0;
-    transition: transform 1.5s cubic-bezier(0.6, 0, 0.3, 1) 0.15s, opacity 0.7s ease 1s;
   }
 
   .is-opening .crown-gleam::after {
     display: none;
   }
 
-  .front-door.is-opening {
-    opacity: 0;
-    filter: blur(3px);
-    transition: opacity 0.6s cubic-bezier(0.4, 0, 1, 1) 1.05s, filter 0.6s ease 1.05s;
+  .sliding-door {
+    box-shadow: 0 0 0 0 transparent;
+    transition: transform 1.25s cubic-bezier(0.65, 0, 0.35, 1), box-shadow 1.25s ease;
+    will-change: transform;
   }
 
-  .door-wait {
-    animation: fade-in 0.6s ease both;
+  /* Each door holds the whole front door at full width and shows its half.
+     The left one is a pixel wider so no hairline shows down the middle. */
+  .sliding-door-left {
+    left: 0;
+    width: calc(50% + 1px);
+  }
+
+  .sliding-door-right {
+    right: 0;
+    width: 50%;
+  }
+
+  .sliding-door > .navy-ground {
+    width: 200%;
+  }
+
+  .sliding-door-left > .navy-ground {
+    left: 0;
+  }
+
+  .sliding-door-right > .navy-ground {
+    right: 0;
+  }
+
+  .is-parting .sliding-door-left {
+    transform: translateX(-101%);
+    box-shadow: 14px 0 40px -14px rgba(6, 12, 32, 0.55);
+  }
+
+  .is-parting .sliding-door-right {
+    transform: translateX(101%);
+    box-shadow: -14px 0 40px -14px rgba(6, 12, 32, 0.55);
   }
 
   @keyframes door-out {
@@ -804,5 +807,6 @@ body {
   }
   .gold-text, .gold-text-light, .hero-sheen { animation: none !important; }
   .crown-gleam::after, .btn-brass::after { display: none; }
-  .door-in, .door-word, .door-half, .gather { animation: none !important; transition: none !important; opacity: 1 !important; }
+  .door-in, .door-word, .gather { animation: none !important; transition: none !important; opacity: 1 !important; }
+  .sliding-door { transition: none !important; }
 }

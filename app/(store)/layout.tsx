@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { Analytics } from "@/components/store/analytics";
 import { CartProvider } from "@/components/store/cart";
+import { DoorReveal } from "@/components/store/door-reveal";
 import { Footer, Header } from "@/components/store/chrome";
 import { NewsletterPopup } from "@/components/store/newsletter-popup";
 import { PageFade } from "@/components/store/page-fade";
@@ -71,6 +72,7 @@ export default async function StoreLayout({ children }: { children: React.ReactN
 
   return (
     <CartProvider currency={settings.currency}>
+      <DoorReveal>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(business).replace(/</g, "\\u003c") }} />
       <PlateGradients />
       <Suspense fallback={null}>
@@ -107,6 +109,7 @@ export default async function StoreLayout({ children }: { children: React.ReactN
         help={navItems(snapshot, "footer_help")}
         company={navItems(snapshot, "footer_company")}
       />
+      </DoorReveal>
     </CartProvider>
   );
 }
