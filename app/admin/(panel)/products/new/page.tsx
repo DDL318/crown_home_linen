@@ -1,4 +1,5 @@
 import { ProductForm } from "@/components/admin/product-form";
+import { knownOptions } from "@/lib/catalog";
 import { getSnapshot } from "@/lib/repo";
 import type { Product } from "@/lib/types";
 
@@ -33,7 +34,7 @@ export default async function NewProductPage() {
   return (
     <div>
       <h1 className="mb-8 font-serif text-5xl">New piece</h1>
-      <ProductForm product={product} categories={snapshot.categories} currency={snapshot.settings.currency} canDelete={false} />
+      <ProductForm product={product} categories={snapshot.categories} currency={snapshot.settings.currency} known={knownOptions(snapshot)} canDelete={false} />
     </div>
   );
 }
